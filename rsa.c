@@ -19,112 +19,112 @@ int main(){
 // Value
 // Basic
     long   Loop  [1];
-    time_t Seed;
-    long   Level = 8;
-    gmp_randstate_t Random_State;
-	gmp_randinit_default(Random_State);
+    time_t seed;
+    long   degree_n = 8;
+    gmp_randstate_t rand_state;
+	gmp_randinit_default(rand_state);
    // RSA
-    mpz_t Buffer_mpz_1, Buffer_mpz_2, Prime_1, Prime_2, Phi, Common_Key, Public_Key, Private_Key;
-	mpz_inits(Buffer_mpz_1, Buffer_mpz_2, Prime_1, Prime_2, Phi, Common_Key, Public_Key, Private_Key, NULL);
+    mpz_t buffer_mpz_1, buffer_mpz_2, prime1, prime2, euler_func, common_key, pub_key, priv_key;
+	mpz_inits(buffer_mpz_1, buffer_mpz_2, prime1, prime2, euler_func, common_key, pub_key, priv_key, NULL);
   // Implementation
    // RSA init
-    // Prime_1
+    // prime1
      sleep(1);
-     time(&Seed);
-     gmp_randseed_ui(Random_State, Seed);
-     mpz_urandomb(Prime_1, Random_State, Level);
-	 mpz_nextprime(Prime_1, Prime_1);
-   // Prime_2
+     time(&seed);
+     gmp_randseed_ui(rand_state, seed);
+     mpz_urandomb(prime1, rand_state, degree_n);
+	 mpz_nextprime(prime1, prime1);
+   // prime2
      sleep(1);
-     time(&Seed);
-     gmp_randseed_ui(Random_State, Seed);
-     mpz_urandomb(Prime_2, Random_State, Level);
-	 mpz_nextprime(Prime_2, Prime_2);
-   // Phi
-     mpz_sub_ui(Phi,          Prime_1, 1);
-     mpz_sub_ui(Buffer_mpz_1, Prime_2, 1);
-     mpz_mul(   Phi,          Phi,     Buffer_mpz_1);
-    // Common_Key
-     mpz_mul(Common_Key, Prime_1, Prime_2);
+     time(&seed);
+     gmp_randseed_ui(rand_state, seed);
+     mpz_urandomb(prime2, rand_state, degree_n);
+	 mpz_nextprime(prime2, prime2);
+   // Euler's func
+     mpz_sub_ui(euler_func,          prime1, 1);
+     mpz_sub_ui(buffer_mpz_1, prime2, 1);
+     mpz_mul(   euler_func,          euler_func,     buffer_mpz_1);
+    // common_key
+     mpz_mul(common_key, prime1, prime2);
      //
-    // Public_Key
-     // Init random Public_Key
+    // pub_key
+     // Init random pub_key
       do{
        sleep(1);
-       time(&Seed);
-       gmp_randseed_ui(Random_State, Seed);
-       mpz_urandomb(Public_Key, Random_State, Level);
-      }while(mpz_cmp(Public_Key, Phi) >= 0 || mpz_cmp_ui(Public_Key, 1) == 0);
-      mpz_set(Buffer_mpz_2, Public_Key);
-     // Pick Public_Key
+       time(&seed);
+       gmp_randseed_ui(rand_state, seed);
+       mpz_urandomb(pub_key, rand_state, degree_n);
+      }while(mpz_cmp(pub_key, euler_func) >= 0 || mpz_cmp_ui(pub_key, 1) == 0);
+      mpz_set(buffer_mpz_2, pub_key);
+     // Pick pub_key
       while(1){
-       if(mpz_cmp(Public_Key, Phi) < 0){
-        mpz_gcd(Buffer_mpz_1, Public_Key, Phi);
-        if(mpz_cmp_ui(Buffer_mpz_1, 1) == 0) break;
-        mpz_add_ui(Public_Key, Public_Key, 1);
+       if(mpz_cmp(pub_key, euler_func) < 0){
+        mpz_gcd(buffer_mpz_1, pub_key, euler_func);
+        if(mpz_cmp_ui(buffer_mpz_1, 1) == 0) break;
+        mpz_add_ui(pub_key, pub_key, 1);
        }else{
-        mpz_set(Public_Key, Buffer_mpz_2);
+        mpz_set(pub_key, buffer_mpz_2);
         while(1){
-         mpz_sub_ui(Public_Key, Public_Key, 1);
-         if(mpz_cmp_ui(Public_Key, 1) == 0){
+         mpz_sub_ui(pub_key, pub_key, 1);
+         if(mpz_cmp_ui(pub_key, 1) == 0){
           printf("%d\n", __LINE__);
-          mpz_clear(Buffer_mpz_1);
-          mpz_clear(Buffer_mpz_2);
-          mpz_clear(Prime_1);
-          mpz_clear(Prime_2);
-          mpz_clear(Phi);
-          mpz_clear(Common_Key);
-          mpz_clear(Public_Key);
-          mpz_clear(Private_Key);
+          mpz_clear(buffer_mpz_1);
+          mpz_clear(buffer_mpz_2);
+          mpz_clear(prime1);
+          mpz_clear(prime2);
+          mpz_clear(euler_func);
+          mpz_clear(common_key);
+          mpz_clear(pub_key);
+          mpz_clear(priv_key);
           return 1;
          }
-         mpz_gcd(Buffer_mpz_1, Public_Key, Phi);
-         if(mpz_cmp_ui(Buffer_mpz_1, 1) == 0) goto l_END_PK;
+         mpz_gcd(buffer_mpz_1, pub_key, euler_func);
+         if(mpz_cmp_ui(buffer_mpz_1, 1) == 0) goto l_END_PK;
         }
        }
       }
       l_END_PK:;
-    // Private_Key
-     mpz_set_ui(Buffer_mpz_1, 1);
-     mpz_set_ui(Private_Key,  2); char Switch = 'V';
+    // priv_key
+     mpz_set_ui(buffer_mpz_1, 1);
+     mpz_set_ui(priv_key,  2); char Switch = 'V';
      l_AGAIN:do{
-      mpz_add_ui(Private_Key, Private_Key, 1);
-      mpz_mul(Buffer_mpz_1, Public_Key,   Private_Key);
-      mpz_mod(Buffer_mpz_1, Buffer_mpz_1, Phi);
-     }while(mpz_cmp_ui(Buffer_mpz_1, 1) != 0);
+      mpz_add_ui(priv_key, priv_key, 1);
+      mpz_mul(buffer_mpz_1, pub_key,   priv_key);
+      mpz_mod(buffer_mpz_1, buffer_mpz_1, euler_func);
+     }while(mpz_cmp_ui(buffer_mpz_1, 1) != 0);
      if(Switch == 'V'){
       Switch = 'X';
-      mpz_set(Buffer_mpz_2, Private_Key);
+      mpz_set(buffer_mpz_2, priv_key);
       goto l_AGAIN;
      }
    // Encrypt & Decrypt
-    mpz_set_ui(Buffer_mpz_1, 88);
-    mpz_powm(Buffer_mpz_1, Buffer_mpz_1, Public_Key,  Common_Key);
-    mpz_powm(Buffer_mpz_1, Buffer_mpz_1, Private_Key, Common_Key);
-    gmp_printf("Prime_1     %Zd\n", Prime_1);
-    gmp_printf("Prime_2     %Zd\n", Prime_2);
-    gmp_printf("Public_Key  %Zd\n", Public_Key);
-    gmp_printf("Private_Key %Zd\n", Private_Key);
-    gmp_printf("Common_Key  %Zd\n", Common_Key);
-    gmp_printf("Decrypted   %Zd\n", Buffer_mpz_1);
+    mpz_set_ui(buffer_mpz_1, 88);
+    mpz_powm(buffer_mpz_1, buffer_mpz_1, pub_key,  common_key);
+    mpz_powm(buffer_mpz_1, buffer_mpz_1, priv_key, common_key);
+    gmp_printf("prime1     %Zd\n", prime1);
+    gmp_printf("prime2     %Zd\n", prime2);
+    gmp_printf("pub_key  %Zd\n", pub_key);
+    gmp_printf("priv_key %Zd\n", priv_key);
+    gmp_printf("common_key  %Zd\n", common_key);
+    gmp_printf("Decrypted   %Zd\n", buffer_mpz_1);
     printf("----------------------------------------------------\n");
-    mpz_set_ui(Buffer_mpz_1, 88);
-    mpz_powm(Buffer_mpz_1, Buffer_mpz_1, Public_Key,   Common_Key);
-    mpz_powm(Buffer_mpz_1, Buffer_mpz_1, Buffer_mpz_2, Common_Key);
-    gmp_printf("Prime_1     %Zd\n", Prime_1);
-    gmp_printf("Prime_2     %Zd\n", Prime_2);
-    gmp_printf("Public_Key  %Zd\n", Public_Key);
-    gmp_printf("Private_Key %Zd\n", Buffer_mpz_2);
-    gmp_printf("Common_Key  %Zd\n", Common_Key);
-    gmp_printf("Decrypted   %Zd\n", Buffer_mpz_1);
+    mpz_set_ui(buffer_mpz_1, 88);
+    mpz_powm(buffer_mpz_1, buffer_mpz_1, pub_key,   common_key);
+    mpz_powm(buffer_mpz_1, buffer_mpz_1, buffer_mpz_2, common_key);
+    gmp_printf("prime1     %Zd\n", prime1);
+    gmp_printf("prime2     %Zd\n", prime2);
+    gmp_printf("pub_key  %Zd\n", pub_key);
+    gmp_printf("priv_key %Zd\n", buffer_mpz_2);
+    gmp_printf("common_key  %Zd\n", common_key);
+    gmp_printf("Decrypted   %Zd\n", buffer_mpz_1);
   // Clean up
-   mpz_clear(Buffer_mpz_1);
-   mpz_clear(Buffer_mpz_2);
-   mpz_clear(Prime_1);
-   mpz_clear(Prime_2);
-   mpz_clear(Phi);
-   mpz_clear(Common_Key);
-   mpz_clear(Public_Key);
-   mpz_clear(Private_Key);
+   mpz_clear(buffer_mpz_1);
+   mpz_clear(buffer_mpz_2);
+   mpz_clear(prime1);
+   mpz_clear(prime2);
+   mpz_clear(euler_func);
+   mpz_clear(common_key);
+   mpz_clear(pub_key);
+   mpz_clear(priv_key);
    return 0;
  }
