@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <time.h>
 
+#define TEST
+
 
 void mpz_generate_prime_number(mpz_t x)
 { // Generates prime number to variables x
@@ -54,11 +56,11 @@ void mpz_generate_rsa_keys(rsa_keys_t keys)
 		if (!mpz_cmp_ui(buffer, 0))
 		{
 			mpz_div(keys.d, keys.d, keys.e);
-		}
-		if (mpz_cmp(keys.d, euler_func) >= 0)
-		{
-			fprintf(stderr, "Oopss... Function generated private key that bigger than Euler function from prime numbers!\n");
-			return;
+			if (mpz_cmp(keys.d, euler_func) >= 0)
+			{
+				fprintf(stderr, "Oopss... Function generated private key that bigger than Euler function from prime numbers!\n");
+				return;
+			}
 		}
 	} while (mpz_cmp(keys.d, prime_one) < 0 || mpz_cmp(keys.d, prime_two) < 0); // Check. Is prime numbers less than d
 }
