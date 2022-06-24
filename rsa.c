@@ -13,7 +13,7 @@
 
 int main(){
 	time_t seed;
-	long degree_n = 8;
+	long degree_n = 1059;
 	gmp_randstate_t rand_state;
 	gmp_randinit_default(rand_state);
 	mpz_t buffer_mpz_1, buffer_mpz_2, prime1, prime2, euler_func, common_key, pub_key, priv_key;
