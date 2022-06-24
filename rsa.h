@@ -12,6 +12,9 @@ typedef struct
 	mpz_t d;	// Private key
 } rsa_keys_t;
 
-void mpz_generate_rsa_keys(rsa_keys_t *keys); // in developing
+void mpz_generate_rsa_keys(rsa_keys_t *keys); // Generates RSA keys
 
+void mpz_rsa_enrypt_ui(rsa_keys_t *keys, unsigned int data, mpz_t output);
+
+void mpz_rsa_decrypt_ui(rsa_keys_t *keys, mpz_t input, unsigned int *output);
 #endif

@@ -1,137 +1,87 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-#include <errno.h>
-#include <string.h>
-#include <time.h>
-#include <math.h>
+#include "rsa.h"
 #include <gmp.h>
-#include <sys/time.h>
-#include <sys/file.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+
+#define TEST
 
 
-int main(){
+void mpz_generate_prime_number(mpz_t x)
+{ // Generates prime number to variables x
+	gmp_randstate_t random_state;
+	gmp_randinit_default(random_state);
 	time_t seed;
-	long degree_n = 1059;
-	gmp_randstate_t rand_state;
-	gmp_randinit_default(rand_state);
-	mpz_t buffer_mpz_1, buffer_mpz_2, prime1, prime2, euler_func, common_key, pub_key, priv_key;
-	mpz_inits(buffer_mpz_1, buffer_mpz_2, prime1, prime2, euler_func, common_key, pub_key, priv_key, NULL);
+	long size_level = 1059; // rrandomb generating number size of that = 2^size_level - 1, including
+    sleep(1);
+    time(&seed);
+    gmp_randseed_ui(random_state, seed);
+    mpz_rrandomb(x, random_state, size_level);
+	mpz_nextprime(x, x);
+	
+}
 
-	// prime1
-	sleep(1);
-	time(&seed);
-	gmp_randseed_ui(rand_state, seed);
-	mpz_urandomb(prime1, rand_state, degree_n);
-	mpz_nextprime(prime1, prime1);
+void mpz_generate_rsa_keys(rsa_keys_t *keys)
+{
 
-	// prime2
-	sleep(1);
-	time(&seed);
-	gmp_randseed_ui(rand_state, seed);
-	mpz_urandomb(prime2, rand_state, degree_n);
-	mpz_nextprime(prime2, prime2);
+	// Initialization of keys parts
+	mpz_inits(keys->n, keys->e, keys->d, NULL);
 
-	// Euler's func
-	mpz_sub_ui(euler_func, prime1, 1);
-	mpz_sub_ui(buffer_mpz_1, prime2, 1);
-	mpz_mul(euler_func, euler_func, buffer_mpz_1);
+	// Generating two prime numbers
+	mpz_t prime_one, prime_two, euler_func, lcm_of_primes, k, buffer;
+	mpz_inits(prime_one, prime_two, euler_func, lcm_of_primes, k, buffer, NULL);
+	mpz_generate_prime_number(prime_one);
+	mpz_generate_prime_number(prime_two);
+	
+	// Generating open key
+	mpz_mul(keys->n, prime_one, prime_two);
+	mpz_set_ui(keys->e, 65537);
 
-	// common_key
-	mpz_mul(common_key, prime1, prime2);
+	// Calculating Euler function
+	mpz_sub_ui(prime_one, prime_one, 1);
+	mpz_sub_ui(prime_two, prime_two, 1);
+	mpz_add(euler_func, prime_one, prime_two);
 
-	// pub_key
-	// Init random pub_key
+	// Generating private key
+	mpz_lcm(lcm_of_primes, prime_one, prime_two);
+	mpz_set_ui(k, 1);
 	do
 	{
-		sleep(1);
-		time(&seed);
-		gmp_randseed_ui(rand_state, seed);
-		mpz_urandomb(pub_key, rand_state, degree_n);
-	} while (mpz_cmp(pub_key, euler_func) >= 0 || mpz_cmp_ui(pub_key, 1) == 0);
-	mpz_set(buffer_mpz_2, pub_key);
-
-	// Pick pub_key
-	while(1)
-	{
-		if(mpz_cmp(pub_key, euler_func) < 0)
+		mpz_add_ui(k, k, 1);
+		// Expression d = (lcm_from_primes * k + 1) / e
+		mpz_mul(keys->d, k, lcm_of_primes);
+		mpz_add_ui(keys->d, keys->d, 1);
+		// Checking, is d divisible without remainder by e
+		mpz_mod(buffer, keys->d, keys->e);
+		if (!mpz_cmp_ui(buffer, 0))
 		{
-			mpz_gcd(buffer_mpz_1, pub_key, euler_func);
-			if(mpz_cmp_ui(buffer_mpz_1, 1) == 0)
-				break;
-			mpz_add_ui(pub_key, pub_key, 1);
-		}
-		else
-		{
-			mpz_set(pub_key, buffer_mpz_2);
-			while(1)
+			mpz_div(keys->d, keys->d, keys->e);
+			if (mpz_cmp(keys->d, euler_func) >= 0) // Check. Is private key less than Euler fuction of prime numbers
 			{
-				mpz_sub_ui(pub_key, pub_key, 1);
-				if(mpz_cmp_ui(pub_key, 1) == 0)
-				{
-					printf("%d\n", __LINE__);
-					mpz_clear(buffer_mpz_1);
-					mpz_clear(buffer_mpz_2);
-					mpz_clear(prime1);
-					mpz_clear(prime2);
-					mpz_clear(euler_func);
-					mpz_clear(common_key);
-					mpz_clear(pub_key);
-					mpz_clear(priv_key);
-					return 1;
-				}
-				mpz_gcd(buffer_mpz_1, pub_key, euler_func);
-				if(mpz_cmp_ui(buffer_mpz_1, 1) == 0)
-					goto l_END_PK;
+				fprintf(stderr, "Oopss... Function generated private key that bigger than Euler function from prime numbers!\n");
+				return;
+			} else if (mpz_cmp(keys->d, prime_one) < 0 || mpz_cmp(keys->d, prime_two) < 0) // Check. Is prime numbers less than d
+			{
+				continue;
 			}
+			break;
 		}
-	}
-	l_END_PK:;
-	// priv_key
-	mpz_set_ui(buffer_mpz_1, 1);
-	mpz_set_ui(priv_key,  2); char Switch = 'V';
-	l_AGAIN:
-	do
-	{
-		mpz_add_ui(priv_key, priv_key, 1);
-		mpz_mul(buffer_mpz_1, pub_key,   priv_key);
-		mpz_mod(buffer_mpz_1, buffer_mpz_1, euler_func);
-	} while (mpz_cmp_ui(buffer_mpz_1, 1) != 0);
-	if(Switch == 'V')
-	{
-		Switch = 'X';
-		mpz_set(buffer_mpz_2, priv_key);
-		goto l_AGAIN;
-	}
-	// Encrypt & Decrypt
-	mpz_set_ui(buffer_mpz_1, 88);
-	mpz_powm(buffer_mpz_1, buffer_mpz_1, pub_key,  common_key);
-	mpz_powm(buffer_mpz_1, buffer_mpz_1, priv_key, common_key);
-	gmp_printf("prime1     %Zd\n", prime1);
-	gmp_printf("prime2     %Zd\n", prime2);
-	gmp_printf("pub_key  %Zd\n", pub_key);
-	gmp_printf("priv_key %Zd\n", priv_key);
-	gmp_printf("common_key  %Zd\n", common_key);
-	gmp_printf("Decrypted   %Zd\n", buffer_mpz_1);
-	printf("----------------------------------------------------\n");
-	mpz_set_ui(buffer_mpz_1, 88);
-	mpz_powm(buffer_mpz_1, buffer_mpz_1, pub_key,   common_key);
-	mpz_powm(buffer_mpz_1, buffer_mpz_1, buffer_mpz_2, common_key);
-	gmp_printf("prime1     %Zd\n", prime1);
-	gmp_printf("prime2     %Zd\n", prime2);
-	gmp_printf("pub_key  %Zd\n", pub_key);
-	gmp_printf("priv_key %Zd\n", buffer_mpz_2);
-	gmp_printf("common_key  %Zd\n", common_key);
-	gmp_printf("Decrypted   %Zd\n", buffer_mpz_1);
-	// Clean up
-	mpz_clear(buffer_mpz_1);
-	mpz_clear(buffer_mpz_2);
-	mpz_clear(prime1);
-	mpz_clear(prime2);
-	mpz_clear(euler_func);
-	mpz_clear(common_key);
-	mpz_clear(pub_key);
-	mpz_clear(priv_key);
-	return 0;
-	}
+	} while (1);
+}
+
+void mpz_rsa_enrypt_ui(rsa_keys_t *keys, unsigned int data, mpz_t output)
+{
+	mpz_t data_mpz, cipher_data;
+	mpz_init_set_ui(data_mpz, data);
+	mpz_init(cipher_data);
+	
+	mpz_powm(output, data_mpz, keys->e, keys->n);
+}
+
+void mpz_rsa_decrypt_ui(rsa_keys_t *keys, mpz_t input, unsigned int *output)
+{
+	mpz_t output_mpz;
+	mpz_init(output_mpz);
+	mpz_powm(output_mpz, input, keys->d, keys->n);
+	*output = mpz_get_ui(output_mpz);
+}
