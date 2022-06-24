@@ -45,15 +45,10 @@ void mpz_generate_rsa_keys(rsa_keys_t keys)
 int main(){
 	rsa_keys_t keys;
 
-	// Initializing variables 
-	mpz_t prime_num1, prime_num2; 
-	mpz_inits(prime_num1, prime_num2, NULL);
 
-	// Generation prime numbers
-	mpz_generate_prime_number(prime_num1);
-	mpz_generate_prime_number(prime_num2);
-
-	gmp_printf("%Zd\n%Zd\n", prime_num1, prime_num2);
+	gmp_printf("Module(open key):\t%Zd\n"
+			"Degree(open key):\t%Zd\n"
+			"Degree(private key):\t%Zd\n", keys.n, keys.e, keys.d);
 
 	return 0;
 }
