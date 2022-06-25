@@ -13,7 +13,8 @@ int main(){
 	mpz_rsa_enrypt_ui(&keys, data, output);
 	mpz_rsa_decrypt_ui(&keys, output, &output_ui);
 
-	gmp_printf("%Zx\n %lu\n", output, output_ui);
+	gmp_printf("Cipher text: %Zx\n"
+				"Source text:%lu\n", output, output_ui);
 
 	return 0;
 }
